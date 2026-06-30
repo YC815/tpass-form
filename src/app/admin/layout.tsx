@@ -1,0 +1,26 @@
+// /admin 守門：未登入 → 導 login；登入但非管理員 → 顯示 Forbidden（不渲染後台）。
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/tpass-auth";
+import { isAdmin, isSuperAdmin } from "@/config/admin";
+import { loginUrlFor } from "@/config/auth";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { Forbidden } from "@/components/common/Forbidden";
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getSession();
+  if (!session) redirect(loginUrlFor("/admin"));
+
+  if (!(await isAdmin(session.email))) {
+    return <Forbidden />;
+  }
+
+  return (
+    <AdminShell email={session.email} superAdmin={isSuperAdmin(session.email)}>
+      {children}
+    </AdminShell>
+  );
+}

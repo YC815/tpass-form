@@ -1,0 +1,44 @@
+"use client";
+
+import * as React from "react";
+import { Check, Link2 } from "lucide-react";
+import { Button, type ButtonProps } from "@/components/ui/primitives";
+
+interface Props extends Omit<ButtonProps, "onClick" | "children"> {
+  url: string;
+  label?: string;
+}
+
+export function CopyLinkButton({ url, label = "複製連結", size = "sm", variant = "default", ...rest }: Props) {
+  const [copied, setCopied] = React.useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // 安全情境外 clipboard 會被拒；退回選取讓使用者自行複製。
+      const ok = window.getSelection();
+      const el = document.createElement("textarea");
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      try {
+        document.execCommand("copy");
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1600);
+      } finally {
+        el.remove();
+        ok?.removeAllRanges();
+      }
+    }
+  }
+
+  return (
+    <Button type="button" size={size} variant={variant} onClick={copy} {...rest}>
+      {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
+      {copied ? "已複製" : label}
+    </Button>
+  );
+}
