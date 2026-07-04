@@ -1,4 +1,4 @@
-// t-form（consumer）SSO 設定中心。只讀 env，集中管理「對接 auth 所需的最少資訊」。
+// tpass-form（consumer）SSO 設定中心。只讀 env，集中管理「對接 auth 所需的最少資訊」。
 // 邊界：只需要 JWKS 公鑰來源與幾個 URL，絕不碰 auth 私鑰 / arctic / OAuth。
 import "server-only";
 

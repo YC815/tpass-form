@@ -16,4 +16,4 @@ T-Form 是 T-Pass SSO 的**消費端**問卷服務。動手前先讀 `README.md`
 - ❌ 不要在前端驗章、不要把 token 塞 localStorage、不要關掉 `algorithms:['EdDSA']` 鎖定。
 - ❌ 不要把網域 / issuer / audience / storage 寫死——讀 `src/config/*`（env 驅動）。
 - ❌ 身分欄（姓名 / 信箱 / 年級）一律伺服器端從 session 戳記，**不信任 client 傳來的身分**。
-- ✅ UI 一律 light-only Neobrutalism + OKLCH，照 `../t-pass/docs/design.md`。
+- ✅ UI 一律 light-only Neobrutalism + OKLCH，照 `../tpass-portal/docs/design.md`。

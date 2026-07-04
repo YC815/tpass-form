@@ -1,4 +1,4 @@
-// HTTPS 自訂伺服器：t-form 跑在 form.lvh.me:3002，與 auth / t-pass 同一組 mkcert 憑證。
+// HTTPS 自訂伺服器：tpass-form 跑在 form.lvh.me:3002，與 tpass-auth / tpass-portal 同一組 mkcert 憑證。
 // 此檔不經 Next 編譯，語法須與當前 Node 相容。
 import { createServer } from "node:https";
 import { readFileSync } from "node:fs";
@@ -21,5 +21,5 @@ const handle = app.getRequestHandler();
 
 await app.prepare();
 createServer(httpsOptions, (req, res) => handle(req, res)).listen(port, () => {
-  console.log(`> t-form ready on https://${hostname}:${port}`);
+  console.log(`> tpass-form ready on https://${hostname}:${port}`);
 });

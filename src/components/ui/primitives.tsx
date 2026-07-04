@@ -1,4 +1,4 @@
-// 共用 Neobrutalism 基礎元件。嚴格照 t-pass/docs/design.md：
+// 共用 Neobrutalism 基礎元件。嚴格照 tpass-portal/docs/design.md：
 // 互動元素一律 border-2 border-foreground + hard offset shadow，hover 上移、shadow 變大。
 // 禁 soft shadow / dark mode / hex；圓角 ≤ rounded-2xl。
 import * as React from "react";

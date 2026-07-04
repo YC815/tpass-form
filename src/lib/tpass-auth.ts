@@ -1,4 +1,4 @@
-// ★ T-Pass SSO 驗章（直接照抄 t-pass/src/lib/tpass-auth.ts 的參考實作）★
+// ★ T-Pass SSO 驗章（直接照抄 tpass-portal/src/lib/tpass-auth.ts 的參考實作）★
 // 只靠 JWKS 公鑰在自己後端本地驗章認出使用者，全程不回呼 auth、不碰私鑰。
 //
 // 安全四鐵則（務必照做，缺一不可）：
@@ -12,7 +12,7 @@ import { cookies } from "next/headers";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { authConfig } from "@/config/auth";
 
-// T-Pass 通行證的身分內容（對接合約，詳見 auth/INTEGRATION.md）。
+// T-Pass 通行證的身分內容（對接合約，詳見 tpass-auth/INTEGRATION.md）。
 export interface TPassClaims {
   sub: string;
   email: string;
