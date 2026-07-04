@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { LayoutDashboard, Users } from "lucide-react";
 import { authConfig } from "@/config/auth";
 import { PortalLink } from "@/components/common/PortalLink";
+import { AdminSidebar, AdminTabBar } from "@/components/admin/AdminNav";
 
 export function AdminShell({
   email,
@@ -44,39 +44,12 @@ export function AdminShell({
         </div>
       </header>
 
+      <AdminTabBar superAdmin={superAdmin} />
+
       <div className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 flex gap-8">
-        <nav className="hidden md:flex w-44 shrink-0 flex-col gap-2">
-          <AdminNavLink href="/admin" icon={<LayoutDashboard className="h-4 w-4" />}>
-            我的問卷
-          </AdminNavLink>
-          {superAdmin && (
-            <AdminNavLink href="/admin/members" icon={<Users className="h-4 w-4" />}>
-              成員名單
-            </AdminNavLink>
-          )}
-        </nav>
+        <AdminSidebar superAdmin={superAdmin} />
         <main className="flex-1 min-w-0">{children}</main>
       </div>
     </div>
-  );
-}
-
-function AdminNavLink({
-  href,
-  icon,
-  children,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-2 rounded-xl border-2 border-foreground bg-card px-3 py-2 font-bold text-sm text-foreground shadow-[2px_2px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_var(--color-foreground)]"
-    >
-      {icon}
-      {children}
-    </Link>
   );
 }

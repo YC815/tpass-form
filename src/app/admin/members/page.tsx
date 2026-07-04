@@ -50,7 +50,7 @@ export default async function MembersPage() {
             className="flex items-center justify-between gap-3 rounded-2xl border-2 border-foreground bg-card p-4 shadow-[3px_3px_0_0_var(--color-foreground)]"
           >
             <div className="min-w-0">
-              <span className="font-bold truncate">{m.email}</span>
+              <span className="block truncate font-bold">{m.email}</span>
               <p className="font-mono text-[11px] text-muted-foreground">
                 由 {m.addedBy} 新增 · {m.createdAt.toLocaleDateString("zh-TW")}
               </p>
