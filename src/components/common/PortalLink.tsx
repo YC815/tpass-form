@@ -9,7 +9,7 @@ export function PortalLink({ href }: { href: string }) {
       className="inline-flex items-center gap-1.5 rounded-md border-2 border-foreground bg-card px-2.5 py-1 font-mono text-[11px] font-bold text-foreground shadow-[2px_2px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_var(--color-foreground)]"
     >
       <LayoutGrid className="h-3.5 w-3.5" />
-      門戶
+      首頁
     </a>
   );
 }
