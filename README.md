@@ -55,6 +55,10 @@ npx tsc --noEmit
 ## 架構備忘
 
 - 驗章四鐵則在 `src/lib/tpass-auth.ts`（照抄 tpass-portal 參考實作）：`algorithms:['EdDSA']` / issuer / audience / exp。
+- **登出留在本服務**：`src/config/auth.ts` 的 `logoutUrl` 夾帶 `redirect_uri=<自己>`，讓 auth 登出後
+  `303` 導回 T-Form 首頁而不是 auth 自己的頁面（契約見 `tpass-auth/INTEGRATION.md` §7.2）。
+  首頁 (`src/app/page.tsx`) 讀網址上的 `logout=1` 顯示「您已登出」文案；這個參數**只是畫面提示**，
+  只有在 `!isLoggedIn` 時才採信，不能拿來判斷登入狀態。
 - 「誰能開問卷」auth 不管，全在 `src/config/admin.ts` 的消費端白名單（env 種子 ∪ DB）。
 - 表單定義 / 設定存 jsonb（`src/lib/survey-schema.ts` 為單一真相，建構與填寫共用）。
 - 檔案儲存 `src/lib/storage.ts` 預設 `local` driver（寫 `./.uploads`，本機 demo 用）；
