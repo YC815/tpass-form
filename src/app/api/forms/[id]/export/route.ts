@@ -2,7 +2,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSession } from "@/lib/tpass-auth";
 import { isAdmin } from "@/config/admin";
-import { getOwnedForm, listResponses } from "@/lib/forms";
+import { getForm, listResponses } from "@/lib/forms";
 import { answerToText, questionBlocks } from "@/lib/answer-format";
 import { gradeLabel } from "@/lib/grade";
 
@@ -17,10 +17,10 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/forms/[id]/
   }
 
   const { id } = await ctx.params;
-  const form = await getOwnedForm(id, session.sub);
+  const form = await getForm(id);
   if (!form) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const responses = await listResponses(id, session.sub);
+  const responses = await listResponses(id);
   const questions = questionBlocks(form.definition.blocks);
 
   const header = ["送出時間", "姓名", "電子郵件", "年級", ...questions.map((q) => q.title || "（未命名）")];

@@ -52,11 +52,12 @@ interface Props {
   initialTitle: string;
   initialDescription: string | null;
   initialStatus: FormStatus;
+  initialVersion: number;
   initialDefinition: FormDefinition;
   initialSettings: FormSettings;
 }
 
-type SaveState = "saved" | "saving" | "unsaved" | "error";
+type SaveState = "saved" | "saving" | "unsaved" | "error" | "conflict";
 
 export function FormBuilder(props: Props) {
   const [title, setTitle] = React.useState(props.initialTitle);
@@ -65,6 +66,7 @@ export function FormBuilder(props: Props) {
   const [settings, setSettings] = React.useState<FormSettings>(props.initialSettings);
   const [status, setStatus] = React.useState<FormStatus>(props.initialStatus);
   const [saveState, setSaveState] = React.useState<SaveState>("saved");
+  const [conflicted, setConflicted] = React.useState(false);
   const [publishErrors, setPublishErrors] = React.useState<string[]>([]);
   const [pending, startTransition] = React.useTransition();
 
@@ -79,23 +81,38 @@ export function FormBuilder(props: Props) {
     [def.blocks],
   );
 
-  // ── 自動存草稿（debounce）──────────────────────────────────────────
+  // ── 自動存草稿（debounce + 樂觀鎖）─────────────────────────────────
   const stateRef = React.useRef({ title, description, def, settings });
   React.useEffect(() => {
     stateRef.current = { title, description, def, settings };
   });
   const firstRender = React.useRef(true);
+  // 樂觀鎖版本；衝突後凍結，避免拿舊 version 無限重試蓋掉別人。
+  const versionRef = React.useRef(props.initialVersion);
+  const conflictedRef = React.useRef(false);
 
-  const flushSave = React.useCallback(async () => {
+  const flushSave = React.useCallback(async (): Promise<boolean> => {
+    if (conflictedRef.current) return false;
     const s = stateRef.current;
     setSaveState("saving");
-    const res = await saveFormAction(props.id, {
-      title: s.title,
-      description: s.description,
-      definition: s.def,
-      settings: s.settings,
-    });
-    setSaveState(res.ok ? "saved" : "error");
+    const res = await saveFormAction(
+      props.id,
+      { title: s.title, description: s.description, definition: s.def, settings: s.settings },
+      versionRef.current,
+    );
+    if (res.ok && res.version !== undefined) {
+      versionRef.current = res.version;
+      setSaveState("saved");
+      return true;
+    }
+    if (res.conflict) {
+      conflictedRef.current = true;
+      setConflicted(true);
+      setSaveState("conflict");
+    } else {
+      setSaveState("error");
+    }
+    return false;
   }, [props.id]);
 
   React.useEffect(() => {
@@ -103,6 +120,7 @@ export function FormBuilder(props: Props) {
       firstRender.current = false;
       return;
     }
+    if (conflictedRef.current) return;
     setSaveState("unsaved");
     const t = setTimeout(() => {
       void flushSave();
@@ -144,7 +162,8 @@ export function FormBuilder(props: Props) {
   // ── 發布 / 關閉 / 刪除 ─────────────────────────────────────────────
   const onPublish = () =>
     startTransition(async () => {
-      await flushSave();
+      const saved = await flushSave();
+      if (!saved) return; // 衝突或存檔失敗 → 不發布
       const res = await publishFormAction(props.id);
       if (res.ok) {
         setPublishErrors([]);
@@ -186,6 +205,23 @@ export function FormBuilder(props: Props) {
           <StatusBadge status={status} />
         </div>
       </div>
+
+      {conflicted && (
+        <div className="mb-6 rounded-2xl border-2 border-destructive bg-destructive/10 p-4 shadow-[4px_4px_0_0_var(--color-destructive)]">
+          <p className="font-extrabold text-foreground">⚠ 編輯衝突</p>
+          <p className="mt-1 text-sm font-medium text-foreground">
+            有人同時修改了這份問卷，你剛才的變更<strong>尚未儲存</strong>。
+            請先複製你需要保留的內容，再重新載入頁面取得最新版本後繼續編輯。
+          </p>
+          <button
+            type="button"
+            onClick={() => location.reload()}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl border-2 border-foreground bg-card px-4 py-2 font-bold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)]"
+          >
+            重新載入
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* 主畫布 */}
@@ -311,6 +347,7 @@ function SaveBadge({ state }: { state: SaveState }) {
     saving: "儲存中…",
     unsaved: "未儲存",
     error: "儲存失敗",
+    conflict: "編輯衝突",
   };
   return (
     <span className="font-mono text-[11px] font-bold text-muted-foreground">{map[state]}</span>

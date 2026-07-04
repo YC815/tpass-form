@@ -23,10 +23,11 @@ model Form {
   title       String
   description String?
   status      String     @default("draft") // draft | published | closed
-  ownerSub    String // 建立者 JWT sub
+  ownerSub    String // 建立者 JWT sub（僅供顯示，非門禁；admin 皆可維護所有問卷）
   ownerEmail  String
   definition  Json // 有序 blocks（section_break / text_block / question）
   settings    Json // anonymous / identityFields / theme / cover / acceptingResponses
+  version     Int        @default(0) // 樂觀鎖：存檔時 compare-and-swap，擋同時編輯的靜默覆蓋
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   publishedAt DateTime?

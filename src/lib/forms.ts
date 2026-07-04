@@ -16,6 +16,14 @@ const slugId = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
 
 export type FormStatus = "draft" | "published" | "closed";
 
+// 樂觀鎖衝突：存檔時 version 對不上（有人搶先改了同一份問卷）。
+export class ConflictError extends Error {
+  constructor() {
+    super("Conflict");
+    this.name = "ConflictError";
+  }
+}
+
 export interface FormView {
   id: string;
   slug: string;
@@ -24,6 +32,7 @@ export interface FormView {
   status: FormStatus;
   ownerSub: string;
   ownerEmail: string;
+  version: number;
   definition: FormDefinition;
   settings: FormSettings;
   createdAt: Date;
@@ -41,6 +50,7 @@ export function toView(form: Form): FormView {
     status: form.status as FormStatus,
     ownerSub: form.ownerSub,
     ownerEmail: form.ownerEmail,
+    version: form.version,
     definition: formDefinitionSchema.parse(form.definition),
     settings: formSettingsSchema.parse(form.settings),
     createdAt: form.createdAt,
@@ -75,9 +85,10 @@ export async function createDraft(owner: { sub: string; email: string }): Promis
   return form.id;
 }
 
-export async function getOwnedForm(id: string, ownerSub: string): Promise<FormView | null> {
+// 任何 admin 皆可維護所有問卷，故不再依 ownerSub 過濾（授權在呼叫端 requireAdmin）。
+export async function getForm(id: string): Promise<FormView | null> {
   const form = await prisma.form.findUnique({ where: { id } });
-  if (!form || form.ownerSub !== ownerSub) return null;
+  if (!form) return null;
   return toView(form);
 }
 
@@ -87,9 +98,9 @@ export async function getPublicForm(slug: string): Promise<FormView | null> {
   return toView(form);
 }
 
-export async function listOwnedForms(ownerSub: string): Promise<FormView[]> {
+// 列出所有問卷（全員共管）。
+export async function listForms(): Promise<FormView[]> {
   const forms = await prisma.form.findMany({
-    where: { ownerSub },
     orderBy: { updatedAt: "desc" },
   });
   return forms.map(toView);
@@ -110,16 +121,17 @@ export interface DraftPatch {
   settings?: unknown;
 }
 
-export async function saveDraft(id: string, ownerSub: string, patch: DraftPatch): Promise<void> {
-  const owned = await prisma.form.findUnique({
-    where: { id },
-    select: { ownerSub: true },
-  });
-  if (!owned || owned.ownerSub !== ownerSub) throw new Error("not found or not owner");
-
-  await prisma.form.update({
-    where: { id },
+// 存草稿。樂觀鎖：只在 version === expectedVersion 時寫入並 +1，回傳新 version。
+// 版本對不上 → 有人搶先改了 → 丟 ConflictError（絕不靜默覆蓋）。
+export async function saveDraft(
+  id: string,
+  patch: DraftPatch,
+  expectedVersion: number,
+): Promise<number> {
+  const res = await prisma.form.updateMany({
+    where: { id, version: expectedVersion },
     data: {
+      version: { increment: 1 },
       ...(patch.title !== undefined ? { title: patch.title } : {}),
       ...(patch.description !== undefined ? { description: patch.description } : {}),
       ...(patch.definition !== undefined
@@ -130,23 +142,26 @@ export async function saveDraft(id: string, ownerSub: string, patch: DraftPatch)
         : {}),
     },
   });
+  if (res.count === 0) {
+    // 沒改到：分辨是「不存在」還是「版本衝突」。
+    const exists = await prisma.form.findUnique({ where: { id }, select: { id: true } });
+    if (exists) throw new ConflictError();
+    throw new Error("not found");
+  }
+  return expectedVersion + 1;
 }
 
-export async function setStatus(
-  id: string,
-  ownerSub: string,
-  status: FormStatus,
-): Promise<void> {
-  const owned = await prisma.form.findUnique({
+export async function setStatus(id: string, status: FormStatus): Promise<void> {
+  const form = await prisma.form.findUnique({
     where: { id },
-    select: { ownerSub: true, publishedAt: true },
+    select: { publishedAt: true },
   });
-  if (!owned || owned.ownerSub !== ownerSub) throw new Error("not found or not owner");
+  if (!form) throw new Error("not found");
   await prisma.form.update({
     where: { id },
     data: {
       status,
-      ...(status === "published" && !owned.publishedAt
+      ...(status === "published" && !form.publishedAt
         ? { publishedAt: new Date() }
         : {}),
     },
@@ -162,17 +177,8 @@ export interface ResponseRow {
   answers: Record<string, unknown>;
 }
 
-// 列出某問卷的回覆（限擁有者）。
-export async function listResponses(
-  id: string,
-  ownerSub: string,
-): Promise<ResponseRow[]> {
-  const owned = await prisma.form.findUnique({
-    where: { id },
-    select: { ownerSub: true },
-  });
-  if (!owned || owned.ownerSub !== ownerSub) throw new Error("not found or not owner");
-
+// 列出某問卷的回覆（授權在呼叫端 requireAdmin）。
+export async function listResponses(id: string): Promise<ResponseRow[]> {
   const rows = await prisma.response.findMany({
     where: { formId: id },
     orderBy: { submittedAt: "desc" },
@@ -187,11 +193,6 @@ export async function listResponses(
   }));
 }
 
-export async function deleteForm(id: string, ownerSub: string): Promise<void> {
-  const owned = await prisma.form.findUnique({
-    where: { id },
-    select: { ownerSub: true },
-  });
-  if (!owned || owned.ownerSub !== ownerSub) throw new Error("not found or not owner");
+export async function deleteForm(id: string): Promise<void> {
   await prisma.form.delete({ where: { id } });
 }

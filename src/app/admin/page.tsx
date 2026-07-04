@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus, FileText, ArrowUpRight } from "lucide-react";
 import { requireAdmin } from "@/lib/guard";
-import { listOwnedForms, type FormStatus } from "@/lib/forms";
+import { listForms, type FormStatus } from "@/lib/forms";
 import { Badge } from "@/components/ui/primitives";
 import { createFormAction } from "@/app/admin/forms/actions";
 
@@ -12,13 +12,13 @@ const STATUS_META: Record<FormStatus, { label: string; cls: string }> = {
 };
 
 export default async function AdminHomePage() {
-  const session = await requireAdmin();
-  const forms = await listOwnedForms(session.sub);
+  await requireAdmin();
+  const forms = await listForms();
 
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-6">
-        <h1 className="font-extrabold text-2xl tracking-tight">我的問卷</h1>
+        <h1 className="font-extrabold text-2xl tracking-tight">所有問卷</h1>
         <form action={createFormAction}>
           <button
             type="submit"
@@ -53,7 +53,7 @@ export default async function AdminHomePage() {
                     </Badge>
                   </div>
                   <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                    更新於 {f.updatedAt.toLocaleString("zh-TW")}
+                    建立者 {f.ownerEmail} · 更新於 {f.updatedAt.toLocaleString("zh-TW")}
                   </p>
                 </div>
                 <ArrowUpRight className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

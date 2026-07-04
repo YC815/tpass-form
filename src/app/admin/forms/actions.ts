@@ -10,7 +10,8 @@ import {
   saveDraft,
   setStatus,
   deleteForm,
-  getOwnedForm,
+  getForm,
+  ConflictError,
   type DraftPatch,
 } from "@/lib/forms";
 import { validateFormStructure } from "@/lib/survey-schema";
@@ -24,15 +25,24 @@ export async function createFormAction(): Promise<void> {
 export interface SaveResult {
   ok: boolean;
   savedAt: number;
+  version?: number;
+  conflict?: boolean;
   error?: string;
 }
 
-export async function saveFormAction(id: string, patch: DraftPatch): Promise<SaveResult> {
-  const session = await requireAdmin();
+export async function saveFormAction(
+  id: string,
+  patch: DraftPatch,
+  expectedVersion: number,
+): Promise<SaveResult> {
+  await requireAdmin();
   try {
-    await saveDraft(id, session.sub, patch);
-    return { ok: true, savedAt: Date.now() };
-  } catch {
+    const version = await saveDraft(id, patch, expectedVersion);
+    return { ok: true, savedAt: Date.now(), version };
+  } catch (e) {
+    if (e instanceof ConflictError) {
+      return { ok: false, savedAt: Date.now(), conflict: true, error: "有人同時改了這份問卷" };
+    }
     return { ok: false, savedAt: Date.now(), error: "儲存失敗" };
   }
 }
@@ -43,36 +53,36 @@ export interface PublishResult {
 }
 
 export async function publishFormAction(id: string): Promise<PublishResult> {
-  const session = await requireAdmin();
-  const form = await getOwnedForm(id, session.sub);
-  if (!form) return { ok: false, errors: ["找不到問卷或你不是擁有者。"] };
+  await requireAdmin();
+  const form = await getForm(id);
+  if (!form) return { ok: false, errors: ["找不到問卷。"] };
 
   const errors = validateFormStructure(form.definition);
   if (errors.length > 0) return { ok: false, errors };
 
-  await setStatus(id, session.sub, "published");
+  await setStatus(id, "published");
   revalidatePath("/admin");
   revalidatePath("/");
   return { ok: true };
 }
 
 export async function closeFormAction(id: string): Promise<void> {
-  const session = await requireAdmin();
-  await setStatus(id, session.sub, "closed");
+  await requireAdmin();
+  await setStatus(id, "closed");
   revalidatePath("/admin");
   revalidatePath("/");
 }
 
 export async function reopenFormAction(id: string): Promise<void> {
-  const session = await requireAdmin();
-  await setStatus(id, session.sub, "published");
+  await requireAdmin();
+  await setStatus(id, "published");
   revalidatePath("/admin");
   revalidatePath("/");
 }
 
 export async function deleteFormAction(id: string): Promise<void> {
-  const session = await requireAdmin();
-  await deleteForm(id, session.sub);
+  await requireAdmin();
+  await deleteForm(id);
   revalidatePath("/admin");
   revalidatePath("/");
   redirect("/admin");

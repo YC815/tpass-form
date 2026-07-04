@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Inbox } from "lucide-react";
 import { requireAdmin } from "@/lib/guard";
-import { getOwnedForm, listResponses } from "@/lib/forms";
+import { getForm, listResponses } from "@/lib/forms";
 import { answerToText, questionBlocks } from "@/lib/answer-format";
 import { gradeLabel } from "@/lib/grade";
 import type { UploadedFile } from "@/components/fill/QuestionRenderer";
@@ -15,11 +15,11 @@ export default async function ResponsesPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await requireAdmin(`/admin/forms/${id}/responses`);
-  const form = await getOwnedForm(id, session.sub);
+  await requireAdmin(`/admin/forms/${id}/responses`);
+  const form = await getForm(id);
   if (!form) notFound();
 
-  const responses = await listResponses(id, session.sub);
+  const responses = await listResponses(id);
   const questions = questionBlocks(form.definition.blocks);
 
   return (

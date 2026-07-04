@@ -17,11 +17,18 @@ const TONE_BG: Record<Tone, string> = {
   rose: "bg-tone-rose-bg",
 };
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ logout?: string }>;
+}) {
   const session = await getSession();
   const isLoggedIn = session !== null;
   const admin = session ? await isAdmin(session.email) : false;
   const forms = isLoggedIn ? await listPublishedForms() : [];
+  // logout=1 只是 auth 導回來的畫面提示，不是憑證：只有在 session 確實無效時才採信。
+  const { logout } = await searchParams;
+  const justLoggedOut = !isLoggedIn && logout === "1";
 
   return (
     <>
@@ -39,12 +46,14 @@ export default async function HomePage() {
             <ClipboardList className="h-3.5 w-3.5" /> 學生會問卷
           </span>
           <h1 className="mt-4 font-extrabold text-3xl sm:text-4xl tracking-tight">
-            目前開放的問卷
+            {justLoggedOut ? "您已登出" : "目前開放的問卷"}
           </h1>
           <p className="mt-2 font-medium text-muted-foreground">
             {isLoggedIn
               ? "點卡片填寫，或複製連結分享給其他人。"
-              : "請用學校帳號登入以查看與填寫問卷。"}
+              : justLoggedOut
+                ? "您已安全登出 T-Form。要繼續查看與填寫問卷，請重新登入。"
+                : "請用學校帳號登入以查看與填寫問卷。"}
           </p>
         </section>
 
