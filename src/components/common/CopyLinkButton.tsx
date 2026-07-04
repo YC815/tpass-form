@@ -7,9 +7,17 @@ import { Button, type ButtonProps } from "@/components/ui/primitives";
 interface Props extends Omit<ButtonProps, "onClick" | "children"> {
   url: string;
   label?: string;
+  iconOnly?: boolean;
 }
 
-export function CopyLinkButton({ url, label = "複製連結", size = "sm", variant = "default", ...rest }: Props) {
+export function CopyLinkButton({
+  url,
+  label = "複製連結",
+  iconOnly = false,
+  size = "sm",
+  variant = "default",
+  ...rest
+}: Props) {
   const [copied, setCopied] = React.useState(false);
 
   async function copy() {
@@ -36,9 +44,17 @@ export function CopyLinkButton({ url, label = "複製連結", size = "sm", varia
   }
 
   return (
-    <Button type="button" size={size} variant={variant} onClick={copy} {...rest}>
+    <Button
+      type="button"
+      size={size}
+      variant={variant}
+      onClick={copy}
+      aria-label={iconOnly ? (copied ? "已複製" : label) : undefined}
+      title={iconOnly ? label : undefined}
+      {...rest}
+    >
       {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
-      {copied ? "已複製" : label}
+      {!iconOnly && (copied ? "已複製" : label)}
     </Button>
   );
 }

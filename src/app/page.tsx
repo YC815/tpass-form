@@ -79,9 +79,21 @@ export default async function HomePage({
                 return (
                   <div
                     key={f.id}
-                    className={`flex flex-col gap-3 rounded-2xl border-2 border-foreground p-5 shadow-[4px_4px_0_0_var(--color-foreground)] ${TONE_BG[f.settings.theme.tone]}`}
+                    className={`group relative flex flex-col gap-3 rounded-2xl border-2 border-foreground p-5 shadow-[4px_4px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--color-foreground)] focus-within:-translate-y-0.5 focus-within:shadow-[6px_6px_0_0_var(--color-foreground)] ${TONE_BG[f.settings.theme.tone]}`}
                   >
-                    <div className="flex-1">
+                    {/* 整張卡片即「填寫」——覆蓋整卡的透明連結，點任一處進入填寫 */}
+                    <Link
+                      href={`/f/${f.slug}`}
+                      aria-label={`填寫 ${f.title}`}
+                      className="absolute inset-0 z-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+
+                    {/* 右上角複製連結：icon-only，浮在填寫連結之上 */}
+                    <div className="absolute right-3 top-3 z-10">
+                      <CopyLinkButton url={url} variant="default" iconOnly />
+                    </div>
+
+                    <div className="flex-1 pr-10">
                       <h2 className="font-extrabold text-lg leading-tight">{f.title}</h2>
                       {f.description && (
                         <p className="mt-1.5 text-sm font-medium text-foreground/70 line-clamp-3">
@@ -89,14 +101,11 @@ export default async function HomePage({
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/f/${f.slug}`}
-                        className="inline-flex items-center gap-1.5 rounded-xl border-2 border-foreground bg-card px-3 py-1.5 text-sm font-bold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)]"
-                      >
-                        填寫 <ArrowUpRight className="h-4 w-4" />
-                      </Link>
-                      <CopyLinkButton url={url} variant="default" />
+
+                    {/* 填寫提示（非按鈕，指示整卡可點） */}
+                    <div className="flex items-center justify-between font-bold">
+                      <span>填寫問卷</span>
+                      <ArrowUpRight className="h-5 w-5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                     </div>
                   </div>
                 );
