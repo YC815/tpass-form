@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LayoutDashboard, Users } from "lucide-react";
 import { authConfig } from "@/config/auth";
+import { PortalLink } from "@/components/common/PortalLink";
 
 export function AdminShell({
   email,
@@ -15,15 +16,18 @@ export function AdminShell({
     <div className="min-h-full flex flex-col">
       <header className="sticky top-0 z-50 h-16 bg-background/90 backdrop-blur-md border-b-2 border-foreground/20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
-          <Link
-            href="/admin"
-            className="font-mono text-lg font-extrabold tracking-tight text-foreground"
-          >
-            T<span className="text-primary">-</span>Form
-            <span className="ml-2 rounded-md border-2 border-foreground bg-primary px-1.5 py-0.5 align-middle font-mono text-[10px] font-bold text-primary-foreground">
-              ADMIN
-            </span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <PortalLink href={authConfig.portalUrl} />
+            <Link
+              href="/admin"
+              className="font-mono text-lg font-extrabold tracking-tight text-foreground"
+            >
+              T<span className="text-primary">-</span>Form
+              <span className="ml-2 rounded-md border-2 border-foreground bg-primary px-1.5 py-0.5 align-middle font-mono text-[10px] font-bold text-primary-foreground">
+                ADMIN
+              </span>
+            </Link>
+          </div>
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-[11px] font-bold text-foreground">
               {email}

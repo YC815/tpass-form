@@ -1,23 +1,28 @@
 // 頂部導覽列。Server Component：登入/登出都是純連結與表單，不需 client 互動。
 import Link from "next/link";
+import { PortalLink } from "@/components/common/PortalLink";
 
 interface HeaderProps {
   isLoggedIn: boolean;
   loginUrl: string;
   logoutUrl: string;
+  portalUrl: string;
   isAdmin?: boolean;
 }
 
-export function Header({ isLoggedIn, loginUrl, logoutUrl, isAdmin }: HeaderProps) {
+export function Header({ isLoggedIn, loginUrl, logoutUrl, portalUrl, isAdmin }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 h-16 bg-background/90 backdrop-blur-md border-b-2 border-foreground/20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
-        <Link
-          href="/"
-          className="font-mono text-lg font-extrabold tracking-tight text-foreground"
-        >
-          T<span className="text-primary">-</span>Form
-        </Link>
+        <div className="flex items-center gap-3">
+          <PortalLink href={portalUrl} />
+          <Link
+            href="/"
+            className="font-mono text-lg font-extrabold tracking-tight text-foreground"
+          >
+            T<span className="text-primary">-</span>Form
+          </Link>
+        </div>
 
         {isLoggedIn ? (
           <div className="flex items-center gap-3">

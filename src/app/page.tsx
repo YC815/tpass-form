@@ -29,6 +29,7 @@ export default async function HomePage() {
         isLoggedIn={isLoggedIn}
         loginUrl={authConfig.loginUrl}
         logoutUrl={authConfig.logoutUrl}
+        portalUrl={authConfig.portalUrl}
         isAdmin={admin}
       />
 

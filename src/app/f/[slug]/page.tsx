@@ -14,6 +14,7 @@ function Shell({ children, isLoggedIn, admin }: { children: React.ReactNode; isL
         isLoggedIn={isLoggedIn}
         loginUrl={authConfig.loginUrl}
         logoutUrl={authConfig.logoutUrl}
+        portalUrl={authConfig.portalUrl}
         isAdmin={admin}
       />
       <main className="flex-1">
