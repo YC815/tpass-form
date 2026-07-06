@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/primitives";
 import { Forbidden } from "@/components/common/Forbidden";
 import { AddMemberForm } from "@/components/admin/AddMemberForm";
+import { BulkAddMembersForm } from "@/components/admin/BulkAddMembersForm";
 import { removeAdminAction } from "./actions";
 
 export default async function MembersPage() {
@@ -26,6 +27,14 @@ export default async function MembersPage() {
       <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)] mb-6">
         <h2 className="font-bold mb-3">新增成員</h2>
         <AddMemberForm />
+      </div>
+
+      <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)] mb-6">
+        <h2 className="font-bold mb-1">批次貼上匯入</h2>
+        <p className="mb-3 font-medium text-sm text-muted-foreground">
+          一行一個 email，貼上後先解析預覽，確認無誤再送出。
+        </p>
+        <BulkAddMembersForm />
       </div>
 
       <div className="flex flex-col gap-3">
