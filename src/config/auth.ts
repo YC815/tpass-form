@@ -4,11 +4,16 @@ import "server-only";
 
 const REQUIRED = [
   "AUTH_JWKS_URL",
-  "AUTH_LOGIN_URL",
+  "AUTH_AUTHORIZE_URL",
   "AUTH_LOGOUT_URL",
   "FORM_SELF_URL",
   "PORTAL_URL",
+  "TPASS_SERVICE_ID",
   "JWT_ISSUER",
+  // 匿名回覆去識別化的 HMAC secret：不設就直接拒絕啟動（fail closed）。
+  // 空值 = 匿名雜湊可被已知 sub 清單暴力反解，匿名承諾形同虛設（安全審查 M1）。
+  "ANON_HASH_SECRET",
+  // v1 遷移期 fallback 用；v1 停發後可移除
   "JWT_AUDIENCE",
   "TPASS_COOKIE_NAME",
 ] as const;
@@ -21,22 +26,35 @@ if (missing.length > 0) {
 }
 
 const self = process.env.FORM_SELF_URL!;
+const serviceId = process.env.TPASS_SERVICE_ID!;
 
-// 登入回跳路徑可帶相對路徑（例如剛要填的那份問卷），組成完整 redirect_uri。
+// 登入回跳路徑可帶站內路徑（例如剛要填的那份問卷），組成 authorize 入口（契約 v2）。
 export function loginUrlFor(returnPath = "/"): string {
-  const redirect = new URL(returnPath, self).toString();
-  return `${process.env.AUTH_LOGIN_URL}?redirect_uri=${encodeURIComponent(redirect)}`;
+  const u = new URL(process.env.AUTH_AUTHORIZE_URL!);
+  u.searchParams.set("service", serviceId);
+  u.searchParams.set("redirect_uri", `${self}/api/auth/callback`);
+  u.searchParams.set("next", returnPath);
+  return u.toString();
 }
 
 export const authConfig = {
   jwksUrl: process.env.AUTH_JWKS_URL!,
   loginUrl: loginUrlFor("/"),
-  // 登出：夾帶 redirect_uri 回到自己首頁，登出後留在 T-Form 而不是被丟到 auth。
-  logoutUrl: `${process.env.AUTH_LOGOUT_URL}?redirect_uri=${encodeURIComponent(self)}`,
+  // 登出走自己的 route：先清自己的 cookie，再鏈到 auth 清登入態。
+  logoutUrl: `${self}/api/auth/logout`,
+  authLogoutUrl: process.env.AUTH_LOGOUT_URL!,
   selfUrl: self,
+  serviceId,
   // 回門戶大廳的網址（navbar 按鈕用）。env 驅動，絕不寫死網域。
   portalUrl: process.env.PORTAL_URL!,
   issuer: process.env.JWT_ISSUER!,
-  audience: process.env.JWT_AUDIENCE!,
-  cookieName: process.env.TPASS_COOKIE_NAME!,
+  // v2：本服務專屬 audience——別的服務的 token 在這裡驗不過（爆炸半徑隔離）。
+  serviceAudience: `tpass:${serviceId}`,
+  // v2：本服務自己的 host-only cookie（不設 Domain，別的子網域收不到）。
+  ownCookieName: "tpass_token",
+  cookieSecure: self.startsWith("https://"),
+  anonHashSecret: process.env.ANON_HASH_SECRET!,
+  // v1 遷移期 fallback（全生態升級後移除）。
+  legacyAudience: process.env.JWT_AUDIENCE!,
+  legacyCookieName: process.env.TPASS_COOKIE_NAME!,
 } as const;

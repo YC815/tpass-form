@@ -1,11 +1,11 @@
-// ★ T-Pass SSO 驗章（直接照抄 tpass-portal/src/lib/tpass-auth.ts 的參考實作）★
+// ★ T-Pass SSO 驗章（照抄 tpass-portal/src/lib/tpass-auth.ts 的參考實作・契約 v2）★
 // 只靠 JWKS 公鑰在自己後端本地驗章認出使用者，全程不回呼 auth、不碰私鑰。
 //
 // 安全四鐵則（務必照做，缺一不可）：
 //   1. 鎖 algorithms: ['EdDSA'] —— 不鎖會有 alg confusion 偽造風險（公鑰被當對稱密鑰）。
-//   2. 檢查 issuer —— 確認是「這個 auth」發的票。
-//   3. 檢查 audience: 'tschool-sso' —— 確認是發給我們這個生態系的票。
-//   4. exp 過期檢查（jose 預設會驗，別關掉）。
+//   2. 檢查 issuer —— 確認票是「這個 auth」簽的。
+//   3. 檢查 audience == tpass:<本服務id> —— 票是簽給「我」的；別的服務的 token 必須驗不過。
+//   4. 檢查 exp（jose 預設會驗，別關掉）。
 // 驗章只能在 server 端做（cookie 是 HttpOnly，瀏覽器 JS 拿不到）。
 import "server-only";
 import { cookies } from "next/headers";
@@ -26,12 +26,16 @@ export interface TPassClaims {
 const JWKS = createRemoteJWKSet(new URL(authConfig.jwksUrl));
 
 // 驗一個 token。失敗（過期 / 竄改 / 錯 iss/aud / 錯演算法）一律回 null，不外拋。
-export async function verifySession(token: string): Promise<TPassClaims | null> {
+// audience 預設鎖本服務專屬值；v1 fallback 時才明確傳入 legacy audience。
+export async function verifySession(
+  token: string,
+  audience: string = authConfig.serviceAudience,
+): Promise<TPassClaims | null> {
   try {
     const { payload } = await jwtVerify(token, JWKS, {
       algorithms: ["EdDSA"],
       issuer: authConfig.issuer,
-      audience: authConfig.audience,
+      audience,
     });
     return {
       sub: payload.sub as string,
@@ -41,18 +45,21 @@ export async function verifySession(token: string): Promise<TPassClaims | null> 
       grade: (payload.grade as string | null) ?? null,
       exp: payload.exp as number,
     };
-  } catch (e) {
-    // [TEMP DEBUG] 逼出被吞掉的真實錯誤，定位後移除。
-    console.error("[tpass-auth] verifySession 失敗:", e);
+  } catch {
     return null;
   }
 }
 
-// 從頂層 cookie 讀目前 session，回 claims 或 null。
+// 讀目前 session：先看自己的 host-only cookie（v2），
+// 遷移期 fallback 到 v1 共用 cookie（讓既有登入者不被強制重登；v1 停發後移除）。
 export async function getSession(): Promise<TPassClaims | null> {
-  const token = (await cookies()).get(authConfig.cookieName)?.value;
-  // [TEMP DEBUG] 確認 cookie 是否讀得到、長度多少。
-  console.error("[tpass-auth] cookie", authConfig.cookieName, "=", token ? `present(len=${token.length})` : "MISSING");
-  if (!token) return null;
-  return verifySession(token);
+  const jar = await cookies();
+  const own = jar.get(authConfig.ownCookieName)?.value;
+  if (own) {
+    const claims = await verifySession(own);
+    if (claims) return claims;
+  }
+  const legacy = jar.get(authConfig.legacyCookieName)?.value;
+  if (!legacy) return null;
+  return verifySession(legacy, authConfig.legacyAudience);
 }

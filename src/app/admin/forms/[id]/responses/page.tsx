@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Inbox } from "lucide-react";
-import { requireAdmin } from "@/lib/guard";
+import { canReadResponses, requireAdmin } from "@/lib/guard";
 import { getForm, listResponses } from "@/lib/forms";
 import { answerToText, questionBlocks } from "@/lib/answer-format";
 import { gradeLabel } from "@/lib/grade";
@@ -15,9 +15,10 @@ export default async function ResponsesPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireAdmin(`/admin/forms/${id}/responses`);
+  const session = await requireAdmin(`/admin/forms/${id}/responses`);
   const form = await getForm(id);
-  if (!form) notFound();
+  // 回覆內容只有問卷建立者或超管可讀（M2）；對無權者以 404 呈現，不洩漏存在性。
+  if (!form || !canReadResponses(session, form)) notFound();
 
   const responses = await listResponses(id);
   const questions = questionBlocks(form.definition.blocks);

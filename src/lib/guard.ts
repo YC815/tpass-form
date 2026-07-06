@@ -30,3 +30,12 @@ export async function requireSuperAdmin(returnPath = "/admin"): Promise<TPassCla
   if (!isSuperAdmin(session.email)) throw new ForbiddenError();
   return session;
 }
+
+// 回覆資料（含匯出 / 附件下載）的存取權：問卷建立者本人或超管。
+// 問卷「編輯」維持全 admin 共管；「別人的回覆內容」屬個資，收斂到 owner（安全審查 M2）。
+export function canReadResponses(
+  session: TPassClaims,
+  form: { ownerSub: string },
+): boolean {
+  return isSuperAdmin(session.email) || form.ownerSub === session.sub;
+}

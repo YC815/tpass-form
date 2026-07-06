@@ -3,6 +3,7 @@
 // 送出問卷。身分一律由伺服器從驗章後的 session 戳記（client 傳的身分一概不信）。
 import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
+import { authConfig } from "@/config/auth";
 import { requireSession } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { getPublicForm } from "@/lib/forms";
@@ -51,9 +52,9 @@ export async function submitFormAction(
   // 防重複 key（與身分顯示分離）：
   if (oneResponsePerUser) {
     if (anonymous) {
-      const secret = process.env.ANON_HASH_SECRET ?? "";
+      // secret 在 config REQUIRED 裡強制存在（M1：空 secret 會讓匿名雜湊可被反解）。
       stamp.anonHash = createHash("sha256")
-        .update(`${session.sub}:${form.id}:${secret}`)
+        .update(`${session.sub}:${form.id}:${authConfig.anonHashSecret}`)
         .digest("hex");
     } else {
       stamp.respondentSub = session.sub;
