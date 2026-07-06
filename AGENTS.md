@@ -17,3 +17,12 @@ T-Form 是 T-Pass SSO 的**消費端**問卷服務。動手前先讀 `README.md`
 - ❌ 不要把網域 / issuer / audience / storage 寫死——讀 `src/config/*`（env 驅動）。
 - ❌ 身分欄（姓名 / 信箱 / 年級）一律伺服器端從 session 戳記，**不信任 client 傳來的身分**。
 - ✅ UI 一律 light-only Neobrutalism + OKLCH，照 `../tpass-portal/docs/design.md`。
+
+## 生態系地圖在上層
+
+本 repo 是 **tpass 生態系**的一個服務（id：`form`）。整個生態系的地圖、跨服務規範、
+`services.json` 註冊表、`tpass` CLI 與部署流程，都在上層 **tpass-ops** repo 的
+`AGENTS.md` 與 `docs/`。動跨服務的東西前先讀那邊。
+
+- 本機啟動一律用上層的 `scripts/tpass dev form`（禁止裸 `npm run dev`）。
+- SSO 串接合約（契約 v2）：`../tpass-auth/INTEGRATION.md`（權威）。

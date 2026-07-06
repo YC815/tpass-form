@@ -2,6 +2,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSession } from "@/lib/tpass-auth";
 import { isAdmin } from "@/config/admin";
+import { canReadResponses } from "@/lib/guard";
 import { getForm, listResponses } from "@/lib/forms";
 import { answerToText, questionBlocks } from "@/lib/answer-format";
 import { gradeLabel } from "@/lib/grade";
@@ -19,6 +20,11 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/forms/[id]/
   const { id } = await ctx.params;
   const form = await getForm(id);
   if (!form) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  // 回覆內容只有問卷建立者或超管可讀（M2：一般 admin 不再全域可讀）。
+  if (!canReadResponses(session, form)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
 
   const responses = await listResponses(id);
   const questions = questionBlocks(form.definition.blocks);
