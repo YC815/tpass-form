@@ -26,16 +26,14 @@ export interface TPassClaims {
 const JWKS = createRemoteJWKSet(new URL(authConfig.jwksUrl));
 
 // 驗一個 token。失敗（過期 / 竄改 / 錯 iss/aud / 錯演算法）一律回 null，不外拋。
-// audience 預設鎖本服務專屬值；v1 fallback 時才明確傳入 legacy audience。
 export async function verifySession(
   token: string,
-  audience: string = authConfig.serviceAudience,
 ): Promise<TPassClaims | null> {
   try {
     const { payload } = await jwtVerify(token, JWKS, {
       algorithms: ["EdDSA"],
       issuer: authConfig.issuer,
-      audience,
+      audience: authConfig.serviceAudience,
     });
     return {
       sub: payload.sub as string,
@@ -50,16 +48,9 @@ export async function verifySession(
   }
 }
 
-// 讀目前 session：先看自己的 host-only cookie（v2），
-// 遷移期 fallback 到 v1 共用 cookie（讓既有登入者不被強制重登；v1 停發後移除）。
+// 讀目前 session：看自己的 host-only cookie（v2）。
 export async function getSession(): Promise<TPassClaims | null> {
-  const jar = await cookies();
-  const own = jar.get(authConfig.ownCookieName)?.value;
-  if (own) {
-    const claims = await verifySession(own);
-    if (claims) return claims;
-  }
-  const legacy = jar.get(authConfig.legacyCookieName)?.value;
-  if (!legacy) return null;
-  return verifySession(legacy, authConfig.legacyAudience);
+  const token = (await cookies()).get(authConfig.ownCookieName)?.value;
+  if (!token) return null;
+  return verifySession(token);
 }

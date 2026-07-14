@@ -13,9 +13,6 @@ const REQUIRED = [
   // 匿名回覆去識別化的 HMAC secret：不設就直接拒絕啟動（fail closed）。
   // 空值 = 匿名雜湊可被已知 sub 清單暴力反解，匿名承諾形同虛設（安全審查 M1）。
   "ANON_HASH_SECRET",
-  // v1 遷移期 fallback 用；v1 停發後可移除
-  "JWT_AUDIENCE",
-  "TPASS_COOKIE_NAME",
 ] as const;
 
 const missing = REQUIRED.filter((key) => !process.env[key]);
@@ -54,7 +51,4 @@ export const authConfig = {
   ownCookieName: "tpass_token",
   cookieSecure: self.startsWith("https://"),
   anonHashSecret: process.env.ANON_HASH_SECRET!,
-  // v1 遷移期 fallback（全生態升級後移除）。
-  legacyAudience: process.env.JWT_AUDIENCE!,
-  legacyCookieName: process.env.TPASS_COOKIE_NAME!,
 } as const;

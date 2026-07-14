@@ -1,11 +1,12 @@
 // 問卷大廳首頁（Server Component）：列出已發布問卷，任何登入者都能填 / 複製連結分享。
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ClipboardList, ArrowUpRight } from "lucide-react";
 import { Header } from "@/components/common/Header";
 import { CopyLinkButton } from "@/components/common/CopyLinkButton";
 import { getSession } from "@/lib/tpass-auth";
 import { isAdmin } from "@/config/admin";
-import { authConfig } from "@/config/auth";
+import { authConfig, loginUrlFor } from "@/config/auth";
 import { listPublishedForms } from "@/lib/forms";
 import { type Tone } from "@/lib/survey-schema";
 
@@ -24,11 +25,17 @@ export default async function HomePage({
 }) {
   const session = await getSession();
   const isLoggedIn = session !== null;
-  const admin = session ? await isAdmin(session.email) : false;
-  const forms = isLoggedIn ? await listPublishedForms() : [];
   // logout=1 只是 auth 導回來的畫面提示，不是憑證：只有在 session 確實無效時才採信。
   const { logout } = await searchParams;
   const justLoggedOut = !isLoggedIn && logout === "1";
+
+  // 契約 v2：本服務的 cookie 只在本網域，第一次被造訪時身上什麼都沒有——要主動去 auth
+  // 換一張自己的票，使用者才會「從門戶點進來就直接認得」（authorize 那趟是無感的）。
+  // 剛登出時不能導，否則會立刻被彈回登入，等於登不出去。
+  if (!isLoggedIn && !justLoggedOut) redirect(loginUrlFor("/"));
+
+  const admin = session ? await isAdmin(session.email) : false;
+  const forms = isLoggedIn ? await listPublishedForms() : [];
 
   return (
     <>
