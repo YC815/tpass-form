@@ -6,7 +6,7 @@
 重點差異提醒：
 - `cookies()`、route handler 的 `ctx.params`、page 的 `params` 都是 **async**（要 `await`）。
 - mutation 用 server actions（`"use server"`）；server action 可被直接 POST，**授權一定要在函式內做**。
-- **禁用 `npm run dev`**。檢查用 `npm run lint` + `npx tsc --noEmit`；本機跑 `npm run start:https`。
+- 本機跑 `pnpm dev`（已設好 HTTPS + `form.lvh.me:3002` + `NODE_TLS_REJECT_UNAUTHORIZED=0`）。檢查用 `pnpm lint` + `pnpm exec tsc --noEmit`。
 
 # 角色與紅線
 
@@ -24,5 +24,5 @@ T-Form 是 T-Pass SSO 的**消費端**問卷服務。動手前先讀 `README.md`
 `services.json` 註冊表、`tpass` CLI 與部署流程，都在上層 **tpass-ops** repo 的
 `AGENTS.md` 與 `docs/`。動跨服務的東西前先讀那邊。
 
-- 本機啟動一律用上層的 `scripts/tpass dev form`（禁止裸 `npm run dev`）。
+- 憑證放 `$HOME/tpass-certs`（`tpass setup` 會 symlink 過去；沒有 ops repo 就自己 mkcert，見 NEW-SERVICE §4.1）。
 - SSO 串接合約（契約 v2）：`../tpass-auth/INTEGRATION.md`（權威）。
