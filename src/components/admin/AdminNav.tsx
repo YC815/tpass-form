@@ -12,8 +12,8 @@ const ITEMS: Item[] = [
   { href: "/admin/members", label: "成員名單", icon: Users, superAdminOnly: true },
 ];
 
-function isActive(pathname: string, href: string) {
-  return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+function isActive(pathname: string | null, href: string) {
+  return href === "/admin" ? pathname === "/admin" : (pathname ?? "").startsWith(href);
 }
 
 function itemsFor(superAdmin: boolean) {
