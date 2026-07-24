@@ -10,12 +10,6 @@ datasource db {
 }
 
 // 學生會 email 白名單（超管種子來自 env，不入此表）。
-model Admin {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  addedBy   String // 操作者 email
-  createdAt DateTime @default(now())
-}
 
 model Form {
   id          String     @id @default(cuid())

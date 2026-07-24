@@ -14,12 +14,12 @@ export default async function AdminLayout({
   const session = await getSession();
   if (!session) redirect(loginUrlFor("/admin"));
 
-  if (!(await isAdmin(session.email))) {
+  if (!isAdmin(session)) {
     return <Forbidden />;
   }
 
   return (
-    <AdminShell email={session.email} superAdmin={isSuperAdmin(session.email)}>
+    <AdminShell email={session.email} superAdmin={isSuperAdmin(session)}>
       {children}
     </AdminShell>
   );

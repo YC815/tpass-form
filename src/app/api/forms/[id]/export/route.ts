@@ -13,7 +13,7 @@ function csvCell(s: string): string {
 
 export async function GET(_req: NextRequest, ctx: RouteContext<"/api/forms/[id]/export">) {
   const session = await getSession();
-  if (!session || !(await isAdmin(session.email))) {
+  if (!session || !isAdmin(session)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

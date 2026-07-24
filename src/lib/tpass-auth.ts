@@ -17,8 +17,8 @@ export interface TPassClaims {
   sub: string;
   email: string;
   name: string;
-  role: string;
-  grade: string | null;
+  // 授權章：此持有人在本服務屬於哪些群組（例 admin / super-admin）。授權只看這個。
+  groups: string[];
   exp: number;
 }
 
@@ -39,8 +39,7 @@ export async function verifySession(
       sub: payload.sub as string,
       email: payload.email as string,
       name: payload.name as string,
-      role: payload.role as string,
-      grade: (payload.grade as string | null) ?? null,
+      groups: Array.isArray(payload.groups) ? (payload.groups as string[]) : [],
       exp: payload.exp as number,
     };
   } catch {

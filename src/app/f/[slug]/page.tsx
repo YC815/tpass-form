@@ -45,7 +45,7 @@ export default async function FillPage({
   const session = await getSession();
   const form = await getPublicForm(slug);
 
-  const admin = session ? await isAdmin(session.email) : false;
+  const admin = isAdmin(session);
 
   if (!form || form.status === "draft") {
     return (

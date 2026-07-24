@@ -34,7 +34,7 @@ export default async function HomePage({
   // 剛登出時不能導，否則會立刻被彈回登入，等於登不出去。
   if (!isLoggedIn && !justLoggedOut) redirect(loginUrlFor("/"));
 
-  const admin = session ? await isAdmin(session.email) : false;
+  const admin = isAdmin(session);
   const forms = isLoggedIn ? await listPublishedForms() : [];
 
   return (
